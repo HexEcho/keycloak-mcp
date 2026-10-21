@@ -1,0 +1,30 @@
+{
+	"mcpServers": {
+		"keycloak-admin-mcp": {
+			"type": "local",
+			"command": "java",
+			"args": [
+				"-jar",
+				"/Users/saravanankc/workspace/keycloak/keycloak-mcp/target/keycloak-mcp-0.1.0-SNAPSHOT.jar",
+				"--spring.profiles.active=stdio"
+			],
+			"tools": [
+				"*"
+			],
+			"env": {
+				"KEYCLOAK_BASE_URL": "http://localhost:8081",
+				"KEYCLOAK_AUTH_MODE": "PASSWORD",
+				"KEYCLOAK_CLIENT_ID": "admin-cli",
+				"KEYCLOAK_USERNAME": "admin",
+				"KEYCLOAK_PASSWORD": "admin"
+			}
+		},
+		"keycloak-admin-mcp-http": {
+			"type": "http",
+			"url": "http://localhost:8080/mcp",
+			"tools": [
+				"*"
+			]
+		}
+	}
+}

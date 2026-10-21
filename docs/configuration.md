@@ -43,5 +43,14 @@ mvn spring-boot:run -Dspring-boot.run.profiles=enterprise
 
 - Dangerous tools are deny-by-default unless allowed in config.
 - Tool-level role checks are configured under `mcp.security.tool-roles`.
-- All mutating tools emit audit logs.
-- Structured logs mask tokens, passwords, and client secrets.
+- Tool invocations emit ECS-compatible JSON outcome events, including read-only,
+  rejected, and failed operations.
+- Log encoding masks common secret-bearing fields and inline credential/token values
+  as defense in depth; application code must still avoid logging request/response
+  bodies or raw exception messages.
+- Tool outcome events include tool name, outcome, duration, and stable error codes,
+  but omit request/response bodies, credentials, client identifiers,
+  realm/principal values, correlation/trace IDs, exception messages, and stack traces.
+- HTTP wiretap logging is disabled by default; keep it disabled in production.
+- See [Troubleshooting](troubleshooting.md) for the ECS fields and log investigation
+  steps.

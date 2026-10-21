@@ -47,6 +47,11 @@ public class RoleAdminService extends AbstractKeycloakDomainService {
         return actionResult("createClientRole", response.status(), response.body());
     }
 
+    public Map<String, Object> updateClientRole(String realm, String clientUuid, String roleName, Map<String, Object> payload) {
+        var response = putResponse(paths.clientRole(realm, clientUuid, roleName), payload);
+        return actionResult("updateClientRole", response.status(), response.body());
+    }
+
     public Map<String, Object> assignCompositeRoles(String realm, String roleName, List<Map<String, Object>> roles) {
         var response = postResponse(paths.role(realm, roleName) + "/composites", roles);
         return actionResult("assignCompositeRoles", response.status(), response.body());

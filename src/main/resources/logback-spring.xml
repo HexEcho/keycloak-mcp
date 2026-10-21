@@ -10,21 +10,45 @@
         <!-- stdout is reserved for MCP protocol messages in STDIO mode -->
         <target>${LOG_TARGET:-System.out}</target>
         <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <jsonGeneratorDecorator class="net.logstash.logback.mask.MaskingJsonGeneratorDecorator">
+                <defaultMask>[REDACTED]</defaultMask>
+                <path>password</path>
+                <path>secret</path>
+                <path>client_secret</path>
+                <path>clientSecret</path>
+                <path>access_token</path>
+                <path>accessToken</path>
+                <path>refresh_token</path>
+                <path>refreshToken</path>
+                <path>id_token</path>
+                <path>idToken</path>
+                <path>token</path>
+                <path>credential</path>
+                <path>authorization</path>
+                <path>client_id</path>
+                <path>clientId</path>
+                <path>principal</path>
+                <path>realm</path>
+                <path>correlationId</path>
+                <path>traceId</path>
+                <valueMask>
+                    <value>(?i).*(password|secret|client_secret|access_token|refresh_token|id_token|token|credential|client_id|authorization|x-correlation-id|correlation.?id|trace.?id|principal|realm)(["']?\s*[:=]\s*["']?|\s+)[^\s,"'&amp;;]+.*</value>
+                    <value>(?i).*Bearer\s+[A-Za-z0-9._~+/-]+=*.*</value>
+                    <value>.*\beyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b.*</value>
+                </valueMask>
+            </jsonGeneratorDecorator>
             <providers>
                 <timestamp/>
                 <pattern>
                     <pattern>{
-                      "level":"%level",
-                      "logger":"%logger",
-                      "thread":"%thread",
-                      "message":"%replace(%replace(%replace(%replace(%replace(%msg){'(?i)client_secret=([^&amp;\\s]+)','client_secret=***'}){'(?i)password=([^&amp;\\s]+)','password=***'}){'(?i)access_token=([^&amp;\\s]+)','access_token=***'}){'(?i)refresh_token=([^&amp;\\s]+)','refresh_token=***'}){'(?i)authorization: Bearer ([^\\s]+)','authorization: Bearer ***'}",
-                      "application":"${appName}",
-                      "traceId":"%X{traceId:-}",
-                      "spanId":"%X{spanId:-}",
-                      "correlationId":"%X{correlationId:-}"
+                      "log.level":"%level",
+                      "log.logger":"%logger",
+                      "process.thread.name":"%thread",
+                      "message":"%message",
+                      "service.name":"${appName}"
                     }</pattern>
                 </pattern>
-                <stackTrace/>
+                <arguments/>
             </providers>
         </encoder>
     </appender>

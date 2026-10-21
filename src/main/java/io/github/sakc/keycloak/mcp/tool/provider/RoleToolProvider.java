@@ -43,6 +43,10 @@ public class RoleToolProvider implements KeycloakToolHandlerProvider {
             new SimpleKeycloakToolHandler<>("create_client_role", "Create a client role", ClientRoleCreateRequest.class,
                 (request, context) -> executionTemplate.execute("create_client_role", request.realm(), true, request,
                     () -> service.createClientRole(request.realm(), request.clientUuid(), request.payload()))),
+            new SimpleKeycloakToolHandler<>("update_client_role",
+                "Update a client role (full role representation; set name to rename it)", ClientRoleUpdateRequest.class,
+                (request, context) -> executionTemplate.execute("update_client_role", request.realm(), true, request,
+                    () -> service.updateClientRole(request.realm(), request.clientUuid(), request.roleName(), request.payload()))),
             new SimpleKeycloakToolHandler<>("assign_composite_roles", "Assign composite roles to a realm role", CompositeRolesRequest.class,
                 (request, context) -> executionTemplate.execute("assign_composite_roles", request.realm(), true, request,
                     () -> service.assignCompositeRoles(request.realm(), request.roleName(), request.roles()))),
@@ -69,5 +73,6 @@ public class RoleToolProvider implements KeycloakToolHandlerProvider {
     public record RoleUpdateRequest(@NotBlank String realm, @NotBlank String roleName, @NotNull Map<String, Object> payload) { }
     public record ClientRoleRealmRequest(@NotBlank String realm, @NotBlank String clientUuid) { }
     public record ClientRoleCreateRequest(@NotBlank String realm, @NotBlank String clientUuid, @NotNull Map<String, Object> payload) { }
+    public record ClientRoleUpdateRequest(@NotBlank String realm, @NotBlank String clientUuid, @NotBlank String roleName, @NotNull Map<String, Object> payload) { }
     public record CompositeRolesRequest(@NotBlank String realm, @NotBlank String roleName, @NotEmpty List<Map<String, Object>> roles) { }
 }

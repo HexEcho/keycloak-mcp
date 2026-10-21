@@ -64,6 +64,7 @@
 - `delete_realm_role`
 - `list_client_roles`
 - `create_client_role`
+- `update_client_role`
 - `assign_composite_roles`
 - `remove_composite_roles`
 - `users_with_role`

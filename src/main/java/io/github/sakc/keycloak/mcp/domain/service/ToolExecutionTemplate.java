@@ -1,7 +1,6 @@
 package io.github.sakc.keycloak.mcp.domain.service;
 
 import java.time.Instant;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -68,25 +67,43 @@ public class ToolExecutionTemplate {
     }
 
     public ToolResponse execute(String toolName, String realm, boolean mutating, Object request, Supplier<Object> supplier) {
-        ToolInvocationContext context = authorizationService.currentContext();
         long started = System.nanoTime();
-        rateLimiter.acquire(context.principal(), toolName, context.correlationId());
-        authorizationService.authorize(toolName, mutating, context);
-        validate(request, context.correlationId());
+        ToolInvocationContext context;
+        try {
+            context = authorizationService.currentContext();
+        }
+        catch (RuntimeException exception) {
+            recordUnexpectedFailure(toolName, mutating, durationMs(started), exception);
+            throw exception;
+        }
+
+        try {
+            rateLimiter.acquire(context.principal(), toolName, context.correlationId());
+            authorizationService.authorize(toolName, mutating, context);
+            validate(request, context.correlationId());
+        }
+        catch (KeycloakAdminException exception) {
+            long durationMs = durationMs(started);
+            recordFailure(toolName, mutating, durationMs, exception);
+            throw exception;
+        }
+        catch (RuntimeException exception) {
+            recordUnexpectedFailure(toolName, mutating, durationMs(started), exception);
+            throw exception;
+        }
 
         var span = tracer == null ? null : tracer.nextSpan().name("mcp.tool." + toolName).tag("realm", realm == null ? "global" : realm).start();
         try (Tracer.SpanInScope ignored = tracer == null ? null : tracer.withSpan(span)) {
             Object data = supplier.get();
             long durationMs = durationMs(started);
             meterRegistry.counter("mcp.tool.invocations", "tool", toolName, "outcome", "success").increment();
-            Timer.builder("mcp.tool.latency").tag("tool", toolName).register(meterRegistry).record(durationMs, java.util.concurrent.TimeUnit.MILLISECONDS);
-            auditService.record(toolName, realm, mutating, context, Map.of("status", "SUCCESS", "timestamp", Instant.now().toString()));
+            recordLatency(toolName, durationMs);
+            auditService.record(toolName, mutating, "success", durationMs, null, null);
             return ToolResponse.success(toolName, realm, context.correlationId(), context.traceId(), durationMs, data);
         }
         catch (KeycloakAdminException exception) {
             long durationMs = durationMs(started);
-            meterRegistry.counter("mcp.tool.invocations", "tool", toolName, "outcome", "error", "code", exception.code()).increment();
-            auditService.record(toolName, realm, mutating, context, Map.of("status", "ERROR", "code", exception.code(), "timestamp", Instant.now().toString()));
+            recordFailure(toolName, mutating, durationMs, exception);
             return ToolResponse.failure(toolName, realm, context.correlationId(), context.traceId(), durationMs, new ToolError(
                 exception.code(),
                 exception.getMessage(),
@@ -97,11 +114,32 @@ public class ToolExecutionTemplate {
                 Instant.now()
             ));
         }
+        catch (RuntimeException exception) {
+            recordUnexpectedFailure(toolName, mutating, durationMs(started), exception);
+            throw exception;
+        }
         finally {
             if (span != null) {
                 span.end();
             }
         }
+    }
+
+    private void recordFailure(String toolName, boolean mutating, long durationMs, KeycloakAdminException exception) {
+        meterRegistry.counter("mcp.tool.invocations", "tool", toolName, "outcome", "error", "code", exception.code()).increment();
+        recordLatency(toolName, durationMs);
+        auditService.record(toolName, mutating, "failure", durationMs, exception.code(), exception.getClass().getName());
+    }
+
+    private void recordUnexpectedFailure(String toolName, boolean mutating, long durationMs, RuntimeException exception) {
+        meterRegistry.counter("mcp.tool.invocations", "tool", toolName, "outcome", "error", "code", "internal_error").increment();
+        recordLatency(toolName, durationMs);
+        auditService.record(toolName, mutating, "failure", durationMs, "internal_error", exception.getClass().getName());
+    }
+
+    private void recordLatency(String toolName, long durationMs) {
+        Timer.builder("mcp.tool.latency").tag("tool", toolName).register(meterRegistry)
+            .record(durationMs, java.util.concurrent.TimeUnit.MILLISECONDS);
     }
 
     private void validate(Object request, String correlationId) {
