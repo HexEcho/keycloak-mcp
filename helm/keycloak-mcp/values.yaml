@@ -1,0 +1,42 @@
+replicaCount: 2
+image:
+  repository: keycloak-mcp
+  tag: latest
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 80
+streamableHttp:
+  enforceJwt: true
+  allowedOrigins: https://mcp.example.com
+  allowedHosts: mcp.example.com,keycloak-mcp-server.default.svc.cluster.local
+  requireMtls: false
+config:
+  keycloakBaseUrl: http://keycloak:8080
+secret:
+  clientSecret: change-me
+ingress:
+  enabled: true
+  className: nginx
+  host: mcp.example.com
+  path: /mcp
+  tls:
+    enabled: true
+    secretName: keycloak-mcp-tls
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 70
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 1
+    memory: 1Gi

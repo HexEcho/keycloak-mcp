@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak-mcp-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: keycloak-mcp-server
+  template:
+    metadata:
+      labels:
+        app: keycloak-mcp-server
+    spec:
+      containers:
+        - name: keycloak-mcp-server
+          image: keycloak-mcp:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker,enterprise
+            - name: KEYCLOAK_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: keycloak-mcp-config
+                  key: keycloak-base-url
+            - name: MCP_ENFORCE_HTTP_JWT
+              valueFrom:
+                configMapKeyRef:
+                  name: keycloak-mcp-config
+                  key: mcp-enforce-http-jwt
+            - name: MCP_STREAMABLE_HTTP_ALLOWED_ORIGINS
+              valueFrom:
+                configMapKeyRef:
+                  name: keycloak-mcp-config
+                  key: mcp-streamable-http-allowed-origins
+            - name: MCP_STREAMABLE_HTTP_ALLOWED_HOSTS
+              valueFrom:
+                configMapKeyRef:
+                  name: keycloak-mcp-config
+                  key: mcp-streamable-http-allowed-hosts
+            - name: MCP_STREAMABLE_HTTP_REQUIRE_MTLS
+              valueFrom:
+                configMapKeyRef:
+                  name: keycloak-mcp-config
+                  key: mcp-streamable-http-require-mtls
+            - name: KEYCLOAK_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-mcp-secret
+                  key: client-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1
+              memory: 1Gi

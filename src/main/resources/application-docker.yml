@@ -1,0 +1,43 @@
+spring:
+  ai:
+    mcp:
+      server:
+        protocol: STREAMABLE
+        stdio: false
+
+mcp:
+  security:
+    allowed-dangerous-tools:
+      - delete_realm
+      - delete_user
+      - delete_client
+      - delete_group
+      - delete_organization
+    tool-roles:
+      delete_realm:
+        - ROLE_REALM_ADMIN
+        - ROLE_SYSTEM
+      create_realm:
+        - ROLE_REALM_ADMIN
+        - ROLE_SYSTEM
+      create_user:
+        - ROLE_USER_ADMIN
+        - ROLE_SYSTEM
+      delete_user:
+        - ROLE_USER_ADMIN
+        - ROLE_SYSTEM
+      create_client:
+        - ROLE_CLIENT_ADMIN
+        - ROLE_SYSTEM
+      rotate_client_secret:
+        - ROLE_CLIENT_ADMIN
+        - ROLE_SYSTEM
+
+management:
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    io.github.sakc.keycloak.mcp: INFO

@@ -1,0 +1,8 @@
+spring:
+  ai:
+    mcp:
+      server:
+        stdio: true
+
+server:
+  port: 0

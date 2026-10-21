@@ -1,0 +1,137 @@
+spring:
+  application:
+    name: keycloak-mcp-server
+  main:
+    banner-mode: off
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  threads:
+    virtual:
+      enabled: true
+  ai:
+    mcp:
+      server:
+        type: SYNC
+        protocol: STREAMABLE
+        request-timeout: 30s
+        name: keycloak-admin-mcp-server
+        version: 0.1.0
+        instructions: Keycloak administration exposed as enterprise MCP tools.
+        streamable-http:
+          mcp-endpoint: /mcp
+          keep-alive-interval: 20s
+          disallow-delete: false
+        annotation-scanner:
+          enabled: true
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+  shutdown: graceful
+  forward-headers-strategy: framework
+  error:
+    include-message: always
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when_authorized
+  tracing:
+    sampling:
+      probability: 1.0
+  observations:
+    key-values:
+      application: keycloak-mcp-server
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: Keycloak MCP Server
+    description: Production-grade Spring AI MCP server for Keycloak Admin API v2
+    java: 21
+    keycloak: 26.7.0
+
+keycloak:
+  admin:
+    base-url: ${KEYCLOAK_BASE_URL:http://localhost:8081}
+    admin-realm: ${KEYCLOAK_ADMIN_REALM:master}
+    token-path: ${KEYCLOAK_TOKEN_PATH:/realms/%s/protocol/openid-connect/token}
+    auth:
+      mode: ${KEYCLOAK_AUTH_MODE:CLIENT_CREDENTIALS}
+      client-id: ${KEYCLOAK_CLIENT_ID:admin-cli}
+      client-secret: ${KEYCLOAK_CLIENT_SECRET:change-me}
+      username: ${KEYCLOAK_USERNAME:admin}
+      password: ${KEYCLOAK_PASSWORD:admin}
+      scope: ${KEYCLOAK_SCOPE:openid profile email}
+    http:
+      connect-timeout: 5s
+      response-timeout: 30s
+      max-connections: 200
+      pending-acquire-max-count: 100
+      wiretap: false
+    resilience:
+      max-attempts: 3
+      retry-backoff: 300ms
+      timeout: 2s
+      failure-rate-threshold: 25
+      slow-call-rate-threshold: 50
+      max-concurrent-calls: 50
+
+mcp:
+  streamable-http:
+    enabled: ${MCP_STREAMABLE_HTTP_ENABLED:true}
+    endpoint: ${MCP_STREAMABLE_HTTP_ENDPOINT:/mcp}
+    keep-alive-interval: ${MCP_STREAMABLE_HTTP_KEEP_ALIVE:20s}
+    disallow-delete: ${MCP_STREAMABLE_HTTP_DISALLOW_DELETE:false}
+    allowed-origins: ${MCP_STREAMABLE_HTTP_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:6274}
+    allowed-hosts: ${MCP_STREAMABLE_HTTP_ALLOWED_HOSTS:localhost,127.0.0.1,keycloak-mcp-server,keycloak-mcp-server.default.svc.cluster.local}
+    require-mtls: ${MCP_STREAMABLE_HTTP_REQUIRE_MTLS:false}
+    mtls-header: ${MCP_STREAMABLE_HTTP_MTLS_HEADER:X-Forwarded-Client-Cert}
+  security:
+    enforce-http-jwt: ${MCP_ENFORCE_HTTP_JWT:false}
+    allow-anonymous-stdio: ${MCP_ALLOW_ANONYMOUS_STDIO:true}
+    dangerous-tools:
+      - delete_realm
+      - delete_user
+      - delete_client
+      - delete_group
+      - delete_organization
+    allowed-dangerous-tools: []
+    tool-roles:
+      delete_realm:
+        - ROLE_REALM_ADMIN
+      create_realm:
+        - ROLE_REALM_ADMIN
+      create_user:
+        - ROLE_USER_ADMIN
+      delete_user:
+        - ROLE_USER_ADMIN
+      create_client:
+        - ROLE_CLIENT_ADMIN
+      rotate_client_secret:
+        - ROLE_CLIENT_ADMIN
+    rate-limit:
+      enabled: true
+      requests: 120
+      window: 1m
+
+logging:
+  level:
+    root: INFO
+    io.github.sakc.keycloak.mcp: INFO
+    org.springframework.security: INFO

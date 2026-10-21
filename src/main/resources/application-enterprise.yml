@@ -1,0 +1,19 @@
+mcp:
+  security:
+    enforce-http-jwt: ${MCP_ENFORCE_HTTP_JWT:true}
+    allow-anonymous-stdio: false
+  streamable-http:
+    disallow-delete: ${MCP_STREAMABLE_HTTP_DISALLOW_DELETE:true}
+    allowed-origins: ${MCP_STREAMABLE_HTTP_ALLOWED_ORIGINS:https://mcp.example.com}
+    allowed-hosts: ${MCP_STREAMABLE_HTTP_ALLOWED_HOSTS:mcp.example.com,keycloak-mcp-server.default.svc.cluster.local}
+    require-mtls: ${MCP_STREAMABLE_HTTP_REQUIRE_MTLS:true}
+
+spring:
+  ai:
+    mcp:
+      server:
+        protocol: STREAMABLE
+        stdio: false
+
+server:
+  forward-headers-strategy: framework

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <springProperty scope="context" name="appName" source="spring.application.name"/>
+
+    <springProfile name="stdio">
+        <property name="LOG_TARGET" value="System.err"/>
+    </springProfile>
+
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- stdout is reserved for MCP protocol messages in STDIO mode -->
+        <target>${LOG_TARGET:-System.out}</target>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp/>
+                <pattern>
+                    <pattern>{
+                      "level":"%level",
+                      "logger":"%logger",
+                      "thread":"%thread",
+                      "message":"%replace(%replace(%replace(%replace(%replace(%msg){'(?i)client_secret=([^&amp;\\s]+)','client_secret=***'}){'(?i)password=([^&amp;\\s]+)','password=***'}){'(?i)access_token=([^&amp;\\s]+)','access_token=***'}){'(?i)refresh_token=([^&amp;\\s]+)','refresh_token=***'}){'(?i)authorization: Bearer ([^\\s]+)','authorization: Bearer ***'}",
+                      "application":"${appName}",
+                      "traceId":"%X{traceId:-}",
+                      "spanId":"%X{spanId:-}",
+                      "correlationId":"%X{correlationId:-}"
+                    }</pattern>
+                </pattern>
+                <stackTrace/>
+            </providers>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="JSON"/>
+    </root>
+</configuration>
